@@ -27,7 +27,7 @@
     height:200px;
     font-size:40px;
     border-style:solid;
-    margin:10px
+    margin:10px;
     max-width:  100%;
     display:inline-block;
     position: absolute;
@@ -74,7 +74,7 @@
             <input type="checkbox" class="characterOption" value=3 disabled=true checked=true>刺客(必要)</input><br/>
             <input type="checkbox" class="characterOption" value=4>超級壞蛋</input><br/>
             <input type="checkbox" class="characterOption" value=5>間諜</input><br/>
-            <input type="checkbox" class="characterOption" value=6>被霸凌的壞人</input><br/>
+            <input type="checkbox" class="characterOption" value=6>八家酒</input><br/>
             <b>其餘自動以雜魚替補</b>
         </div>
         <button id="characterFinish" style="font-size:150%;">確定</button>
@@ -89,6 +89,12 @@
             
         </div>
         <button id="killOver" style="font-size:150%;display:none">結束</button>
+    </div>
+    <div id = "night" style="text-align:center;display:none;">
+        <h1 >夜晚</h1>
+        <button id="startTTS" style="font-size:150%;">語音引導</button>
+        <br/><p id="guide_text"></p><br/><br/><br/>
+        <button id="goMission" style="font-size:150%;">開始遊戲</button>
     </div>
     <div id="game" style="text-align:center;display:none">
         <h1 >遊戲進行</h1>
@@ -141,7 +147,33 @@
                 arr[i]=tempValue;
             }
         }
-    
+
+        function getVoices() {
+            let voices = speechSynthesis.getVoices();
+            if(!voices.length){
+                // some time the voice will not be initialized so we can call speak with empty string
+                // this will initialize the voices 
+                let utterance = new SpeechSynthesisUtterance("");
+                speechSynthesis.speak(utterance);
+                voices = speechSynthesis.getVoices();
+            }
+            return voices;
+        }
+
+        function speak(text, voice, rate, pitch, volume) {
+            // create a SpeechSynthesisUtterance to configure the how text to be spoken 
+            let speakData = new SpeechSynthesisUtterance();
+            speakData.volume = volume; // From 0 to 1
+            speakData.rate = rate; // From 0.1 to 10
+            speakData.pitch = pitch; // From 0 to 2
+            speakData.text = text;
+            speakData.lang = 'zh-TW';
+            speakData.voice = voice;
+            
+            // pass the SpeechSynthesisUtterance to speechSynthesis.speak to start speaking 
+            speechSynthesis.speak(speakData);
+        }
+
         var personNum;
         var currentCard;
         var character=[];
@@ -155,6 +187,7 @@
         var taskSuccessNum=0;
         var taskFailNum=0;
         var first=true;
+        let voices = getVoices();
         $(document).ready(function () {
             $("#startGame").click(function(){
                 $("#startPage").hide();
@@ -210,22 +243,22 @@
                         $(".card[value="+currentCard+"]").text("好雜魚");
                         break;
                     case 1:
-                        $(".card[value="+currentCard+"]").text("梅林");
+                        $(".card[value="+currentCard+"]").text("神");
                         break;
                     case 2:
-                        $(".card[value="+currentCard+"]").text("派西維爾");
+                        $(".card[value="+currentCard+"]").text("天使");
                         break;
                     case 3:
                         $(".card[value="+currentCard+"]").text("刺客");
                         break;
                     case 4:
-                        $(".card[value="+currentCard+"]").text("默德雷德");
+                        $(".card[value="+currentCard+"]").text("超級壞蛋");
                         break;
                     case 5:
-                        $(".card[value="+currentCard+"]").text("莫乾那");
+                        $(".card[value="+currentCard+"]").text("間諜");
                         break;                        
                     case 6:
-                        $(".card[value="+currentCard+"]").text("奧伯倫");
+                        $(".card[value="+currentCard+"]").text("八家酒");
                         break;                        
                 }
                 */
@@ -238,56 +271,168 @@
                 currentCard++;
                 $(".card[value="+currentCard+"]").css("border-color","red");
                 if(currentCard == personNum){
-                    $("#seeYourself").hide();        
-                    $("#game").show();
-                    for(var i=0;i<5;i++){
-                        $('canvas').drawArc({
-                            strokeStyle:'white',
-                            fillStyle: 'white',
-                            strokeWidth: 5,
-                            x: 100+130*i, y: 100,
-                            radius: 50
-                        });
-                        $('canvas').drawArc({
-                            strokeStyle:'#5f941d',
-                            fillStyle: '#5f941d',
-                            strokeWidth: 3,
-                            x: 500+65*i, y: 300,
-                            radius: 25
-                        });
-                        $('canvas').drawText({
-                            fillStyle: '#9cf',
-                            strokeStyle: '#25a',
-                            strokeWidth: 2,
-                            x: 120+130*i, y: 120,
-                            fontSize: 48,
-                            fontFamily: 'Verdana, sans-serif',
-                            text: ""+taskNum[personNum-5][i]
-                        });
+                    $("#seeYourself").hide();
+                    if(character.includes(6)) {
+                        let text = "請除了八家酒以外的所有壞蛋睜開眼睛，互相確認身份<br/>";
+                        $("#guide_text").append(text);
+                    } else {
+                        let text = "請所有壞蛋睜開眼睛，互相確認身份<br/>";
+                        $("#guide_text").append(text);
                     }
+                    text = "請所有壞蛋閉上眼睛<br/>";
+                    $("#guide_text").append(text);
+                    if(character.includes(4)) {
+                        text = "請除了超級壞蛋以外的所有壞蛋豎起大拇指，請神睜開眼睛確認壞蛋身份<br/>";
+                        $("#guide_text").append(text);
+                    } else {
+                        text = "請所有壞蛋豎起大拇指，請神睜開眼睛確認壞蛋身份<br/>";
+                        $("#guide_text").append(text);
+                    }
+                    text = "請神閉上眼睛，請所有壞蛋收起大拇指<br/>";
+                    $("#guide_text").append(text);
+                    if(character.includes(2)) {
+                        if(character.includes(5)) {
+                            text = "請神和間諜豎起大拇指，請天使睜開眼睛確認<br/>";
+                            $("#guide_text").append(text);
+                        } else {
+                            text = "請神豎起大拇指，請天使睜開眼睛確認<br/>";
+                            $("#guide_text").append(text);
+                        }
+                    }
+                    if(character.includes(2)) {
+                        text = "請天使閉上眼睛，請所有人收起大拇指<br/>";
+                        $("#guide_text").append(text);
+                    }
+                    text = "請所有人睜開眼睛，遊戲準備開始<br/>";
+                    $("#guide_text").append(text);
+                    $("#night").show();
+                }
+            });
+
+            $("#startTTS").click(function(){                
+                if ('speechSynthesis' in window) {
+                    $("#startTTS").prop('disabled', true);
+                
+                    let rate = 0.7, pitch = 0.5, volume = 1;
+
+                    var delay = function(s){
+                        return new Promise(function(resolve,reject){
+                            setTimeout(resolve,s); 
+                        });
+                    };
+
+                    delay().then(function(){
+                        if(character.includes(6)) {
+                            let text = "請除了八家酒以外的所有壞蛋睜開眼睛，互相確認身份";
+                            speak(text, voices[5], rate, pitch, volume);
+                        } else {
+                            let text = "請所有壞蛋睜開眼睛，互相確認身份";
+                            speak(text, voices[5], rate, pitch, volume);
+                        }
+                        return delay(20000);
+                    }).then(function(){
+                        text = "請所有壞蛋閉上眼睛";
+                        speak(text, voices[5], rate, pitch, volume);
+                        return delay(2000);
+                    }).then(function(){
+                        if(character.includes(4)) {
+                            text = "請除了超級壞蛋以外的所有壞蛋豎起大拇指，請神睜開眼睛確認壞蛋身份";
+                            speak(text, voices[5], rate, pitch, volume);
+                        } else {
+                            text = "請所有壞蛋豎起大拇指，請神睜開眼睛確認壞蛋身份";
+                            speak(text, voices[5], rate, pitch, volume);
+                        }
+                        return delay(20000);
+                    }).then(function(){
+                        text = "請神閉上眼睛，請所有壞蛋收起大拇指";
+                        speak(text, voices[5], rate, pitch, volume);
+                        return delay(4000);
+                    }).then(function(){
+                        if(character.includes(2)) {
+                            if(character.includes(5)) {
+                                text = "請神和間諜豎起大拇指，請天使睜開眼睛確認";
+                                speak(text, voices[5], rate, pitch, volume);
+                            } else {
+                                text = "請神豎起大拇指，請天使睜開眼睛確認";
+                                speak(text, voices[5], rate, pitch, volume);
+                            }
+                            return delay(15000);
+                        } else {
+                            return delay(1000);
+                        }
+                        return delay(2000);
+                    }).then(function(){
+                        if(character.includes(2)) {
+                            text = "請天使閉上眼睛，請所有人收起大拇指";
+                            speak(text, voices[5], rate, pitch, volume);
+                        }
+                        return delay(4000);
+                    }).then(function(){
+                        text = "請所有人睜開眼睛，遊戲準備開始";
+                        speak(text, voices[5], rate, pitch, volume);
+                        return delay(4000);
+                    }).then(function(){
+                        $("#startTTS").prop('disabled', false);
+                    });
+                }else{
+                    alert(' Speech Synthesis Not Supported 😞'); 
+                }
+            });
+
+            $("#goMission").click(function(){
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel();
+                    clearTimeout();
+                }
+                $("#night").hide();
+                $("#game").show();
+                for(var i=0;i<5;i++){
                     $('canvas').drawArc({
-                        strokeStyle:'red',
+                        strokeStyle:'white',
+                        fillStyle: 'white',
                         strokeWidth: 5,
-                        x: 100, y: 100,
+                        x: 100+130*i, y: 100,
                         radius: 50
                     });
                     $('canvas').drawArc({
-                        strokeStyle:'red',
+                        strokeStyle:'#5f941d',
+                        fillStyle: '#5f941d',
                         strokeWidth: 3,
-                        x: 500, y: 300,
+                        x: 500+65*i, y: 300,
                         radius: 25
                     });
-                    if(personNum==7||personNum==8||personNum==9||personNum==10){
-                        $('canvas').drawText({
-                            fillStyle: '#9cf',
-                            strokeStyle: '#25a',
-                            strokeWidth: 2,
-                            x: 500, y: 50,
-                            fontSize:24,
-                            fontFamily: 'Verdana, sans-serif',
-                            text: "需要二張反對牌"
-                        });    
-                    }
+                    $('canvas').drawText({
+                        fillStyle: '#9cf',
+                        strokeStyle: '#25a',
+                        strokeWidth: 2,
+                        x: 120+130*i, y: 120,
+                        fontSize: 48,
+                        fontFamily: 'Verdana, sans-serif',
+                        text: ""+taskNum[personNum-5][i]
+                    });
+                }
+                $('canvas').drawArc({
+                    strokeStyle:'red',
+                    strokeWidth: 5,
+                    x: 100, y: 100,
+                    radius: 50
+                });
+                $('canvas').drawArc({
+                    strokeStyle:'red',
+                    strokeWidth: 3,
+                    x: 500, y: 300,
+                    radius: 25
+                });
+                if(personNum==7||personNum==8||personNum==9||personNum==10){
+                    $('canvas').drawText({
+                        fillStyle: '#9cf',
+                        strokeStyle: '#25a',
+                        strokeWidth: 2,
+                        x: 500, y: 50,
+                        fontSize:24,
+                        fontFamily: 'Verdana, sans-serif',
+                        text: "需要二張反對牌"
+                    });    
                 }
             });
 
